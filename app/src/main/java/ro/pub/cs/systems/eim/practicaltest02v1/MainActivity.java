@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText inputEditText = null;
     private TextView outputTextView = null;
     private Button searchButton = null;
+    private Button mapButton = null;
     private String myUrlString = "https://www.google.com/complete/search?client=chrome&q=";
     private BroadcastReceiver suggestionsReceiver;
     public static final String ACTION_SUGGESTIONS_RECEIVED = "com.yourapp.ACTION_SUGGESTIONS_RECEIVED";
@@ -59,6 +60,12 @@ public class MainActivity extends AppCompatActivity {
         outputTextView = (TextView) findViewById(R.id.output);
 
         searchButton = (Button) findViewById(R.id.button);
+        mapButton = (Button) findViewById(R.id.toMap);
+
+        mapButton.setOnClickListener(view -> {
+            Intent intent = new Intent(getApplicationContext(), mapActivity.class);
+            startActivity(intent);
+        });
 
         searchButton.setOnClickListener(view -> {
             String copyOfUrlString = myUrlString;
@@ -93,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
                         for (String suggestion : suggestions) {
                             outputTextView.append(suggestion + "\n");
                         }
+                        Log.d("PARSER", suggestions.get(3));
 
                         Intent intent = new Intent();
                         intent.setAction(ACTION_SUGGESTIONS_RECEIVED);
