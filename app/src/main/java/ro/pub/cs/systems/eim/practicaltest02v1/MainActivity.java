@@ -3,6 +3,7 @@ package ro.pub.cs.systems.eim.practicaltest02v1;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 import android.content.BroadcastReceiver;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -40,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver suggestionsReceiver;
     public static final String ACTION_SUGGESTIONS_RECEIVED = "com.yourapp.ACTION_SUGGESTIONS_RECEIVED";
 
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,12 +61,14 @@ public class MainActivity extends AppCompatActivity {
         searchButton = (Button) findViewById(R.id.button);
 
         searchButton.setOnClickListener(view -> {
-            myUrlString += inputEditText.getText().toString();
+            String copyOfUrlString = myUrlString;
+            copyOfUrlString += inputEditText.getText().toString();
 
             // Create a new Thread to handle the network request
+            String finalCopyOfUrlString = copyOfUrlString;
             new Thread(() -> {
                 try {
-                    URL url = new URL(myUrlString);
+                    URL url = new URL(finalCopyOfUrlString);
                     HttpURLConnection connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
 
@@ -84,16 +89,17 @@ public class MainActivity extends AppCompatActivity {
                         Gson gson = new Gson();
                         List<String> suggestions = (List<String>) gson.fromJson(responseString, List.class).get(1);
 
-
+                        outputTextView.setText("");
                         for (String suggestion : suggestions) {
                             outputTextView.append(suggestion + "\n");
                         }
 
                         Intent intent = new Intent();
-                        intent.setAction("com.yourapp.ACTION_SUGGESTIONS_RECEIVED");
+                        intent.setAction(ACTION_SUGGESTIONS_RECEIVED);
                         intent.putStringArrayListExtra("suggestions", new ArrayList<>(suggestions));
                         sendBroadcast(intent); // Send the broadcast
 
+                        Log.d("SuggestionsReceiver", "Broadcast sent with action: " + ACTION_SUGGESTIONS_RECEIVED);
                     });
 
                 } catch (ProtocolException e) {
@@ -110,7 +116,16 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter("com.yourapp.ACTION_SUGGESTIONS_RECEIVED");
 
         // Register the receiver to listen for your custom broadcast
-        registerReceiver(suggestionsReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(suggestionsReceiver, filter, Context.RECEIVER_EXPORTED);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Unregister the receiver to prevent memory leaks
+        unregisterReceiver(suggestionsReceiver);
     }
 }
 
