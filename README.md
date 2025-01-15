@@ -1,2 +1,1 @@
-# PracticalTest02
-Test Practic Colocviu 2 EIM
+Gheorghe Alexandru 342C4
